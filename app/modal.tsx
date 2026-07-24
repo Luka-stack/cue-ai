@@ -1,29 +1,312 @@
-import { Link } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Text } from '@/components/ui/text';
+import { Textarea } from '@/components/ui/textarea';
+import { CalendarDays, Check, Clock, X } from '@/lib/icons';
+import { cn } from '@/lib/utils';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { View } from 'react-native';
+import {
+  KeyboardAwareScrollView,
+  KeyboardProvider,
+  KeyboardToolbar,
+} from 'react-native-keyboard-controller';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+type WithDatetime = {
+  date: Date | null;
+  show: boolean;
+  switch: boolean;
+};
 
 export default function ModalScreen() {
+  const router = useRouter();
+
+  // TAB TODO
+  const [withDate, setWithDate] = useState<WithDatetime>({
+    date: null,
+    show: false,
+    switch: false,
+  });
+
+  const [withTime, setWithTime] = useState<WithDatetime>({
+    date: null,
+    show: false,
+    switch: false,
+  });
+
+  const [todoTitle, setTodoTitle] = useState('');
+  const [todoNote, setTodoNote] = useState('');
+
+  const canSaveTodo = todoTitle?.trim().length > 0;
+
+  const handleSaveTodo = () => {
+    if (canSaveTodo) {
+      let date = new Date();
+
+      if (withDate.date) {
+        date.setFullYear(withDate.date.getFullYear());
+        date.setMonth(withDate.date.getMonth());
+        date.setDate(withDate.date.getDate());
+      }
+
+      if (withTime.date) {
+        date.setHours(withTime.date.getHours());
+        date.setMinutes(withTime.date.getMinutes());
+      }
+
+      const request = {
+        title: todoTitle,
+        note: todoNote,
+        date,
+      };
+
+      router.dismiss();
+    }
+  };
+
+  // TAB NOTE
+  const [noteTitle, setNoteTitle] = useState('');
+  const [noteContent, setNoteContent] = useState('');
+
+  const canSaveNote =
+    noteTitle?.trim().length > 0 || noteContent?.trim().length > 0;
+
+  const handleSaveNote = () => {
+    if (canSaveNote) {
+      const request = {
+        title: noteTitle,
+        content: noteContent,
+      };
+
+      router.dismiss();
+    }
+  };
+
+  // GLOBAL
+  const [tab, setTab] = useState('TODO');
+
+  const canSave = tab === 'TODO' ? canSaveTodo : canSaveNote;
+
+  const handleSave = tab === 'TODO' ? handleSaveTodo : handleSaveNote;
+
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title">This is a modal</ThemedText>
-      <Link href="/" dismissTo style={styles.link}>
-        <ThemedText type="link">Go to home screen</ThemedText>
-      </Link>
-    </ThemedView>
+    <KeyboardProvider>
+      <KeyboardAwareScrollView className="flex-1 bg-slate-200 px-3 pt-3">
+        <Tabs value={tab} onValueChange={(value) => setTab(value)}>
+          <View className="flex flex-row items-center justify-between">
+            <Button
+              onPress={() => router.dismiss()}
+              variant="outline"
+              className="rounded-full size-10 bg-slate-100 border-slate-100"
+            >
+              <X size={24} className="text-slate-600" />
+            </Button>
+
+            <Button
+              onPress={handleSave}
+              className={cn(
+                'rounded-full size-10 bg-slate-100 border-slate-100',
+                !canSave && 'shadow-none',
+              )}
+              disabled={!canSave}
+              variant="outline"
+            >
+              <Check size={24} className="text-slate-600" />
+            </Button>
+          </View>
+
+          <TabsList className="bg-slate-300 w-full mt-2 mb-4">
+            <TabsTrigger value="TODO" className="w-1/2">
+              <Text>To-do</Text>
+            </TabsTrigger>
+
+            <TabsTrigger value="NOTE" className="w-1/2">
+              <Text>Note</Text>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="TODO">
+            <View className="p-2 bg-slate-50 rounded-2xl shadow-sm shadow-black/50 mb-5">
+              <Textarea
+                value={todoTitle}
+                onChangeText={setTodoTitle}
+                placeholder="Title"
+                numberOfLines={2}
+                className="text-lg"
+              />
+              <Textarea
+                value={todoNote}
+                onChangeText={setTodoNote}
+                placeholder="Note"
+                numberOfLines={4}
+                className="text-base"
+              />
+            </View>
+
+            <View>
+              <Text className="text-lg text-muted-foreground font-semibold ml-3 mb-1">
+                Date & Time
+              </Text>
+
+              <View className="p-2 bg-slate-50 rounded-2xl shadow-sm shadow-black/50 gap-4">
+                <View className="px-1 flex flex-row items-center gap-5">
+                  <CalendarDays
+                    size={20}
+                    className="text-slate-400"
+                    strokeWidth={2}
+                  />
+                  <View className="flex justify-center">
+                    <Label nativeID="with-date" htmlFor="with-date">
+                      Date
+                    </Label>
+                    {withDate.date ? (
+                      <Text className="text-blue-500 text-xs">
+                        {withDate.date.toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <View className="ml-auto">
+                    <Switch
+                      id="with-date"
+                      nativeID="with-date"
+                      checked={withDate.switch}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setWithDate((prev) => ({
+                            ...prev,
+                            switch: true,
+                            show: true,
+                          }));
+                        } else {
+                          setWithDate((prev) => ({
+                            ...prev,
+                            switch: false,
+                            show: false,
+                            date: null,
+                          }));
+                        }
+                      }}
+                    />
+                  </View>
+                </View>
+
+                <View className="h-px bg-slate-300 w-[88%] ml-auto" />
+
+                <View className="px-1 flex flex-row items-center gap-5">
+                  <Clock size={20} className="text-slate-400" strokeWidth={2} />
+                  <View className="flex justify-center">
+                    <Label nativeID="with-time" htmlFor="with-time">
+                      Time
+                    </Label>
+                    {withTime.date ? (
+                      <Text className="text-blue-500 text-xs">
+                        {withTime.date.toLocaleTimeString('en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <View className="ml-auto">
+                    <Switch
+                      id="with-time"
+                      nativeID="with-time"
+                      checked={withTime.switch}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setWithTime((prev) => ({
+                            ...prev,
+                            switch: true,
+                            show: true,
+                          }));
+                        } else {
+                          setWithTime((prev) => ({
+                            ...prev,
+                            switch: false,
+                            show: false,
+                            date: null,
+                          }));
+                        }
+                      }}
+                    />
+                  </View>
+                </View>
+
+                {withDate.show ? (
+                  <DateTimePicker
+                    mode={'date'}
+                    value={withDate.date || new Date()}
+                    onValueChange={(_event, selectedDate) =>
+                      setWithDate((prev) => ({
+                        ...prev,
+                        show: false,
+                        date: selectedDate,
+                      }))
+                    }
+                    onDismiss={() =>
+                      setWithDate({
+                        switch: false,
+                        show: false,
+                        date: null,
+                      })
+                    }
+                  />
+                ) : null}
+
+                {withTime.show ? (
+                  <DateTimePicker
+                    mode={'time'}
+                    value={withTime.date || new Date()}
+                    onValueChange={(_event, selectedDate) =>
+                      setWithTime((prev) => ({
+                        ...prev,
+                        show: false,
+                        date: selectedDate,
+                      }))
+                    }
+                    onDismiss={() =>
+                      setWithTime({
+                        switch: false,
+                        show: false,
+                        date: null,
+                      })
+                    }
+                  />
+                ) : null}
+              </View>
+            </View>
+          </TabsContent>
+
+          <TabsContent value="NOTE">
+            <View className="p-2 bg-slate-50 rounded-2xl shadow-sm shadow-black/50 mb-5">
+              <Textarea
+                value={noteTitle}
+                onChangeText={setNoteTitle}
+                placeholder="Title"
+                numberOfLines={2}
+                className="text-lg"
+              />
+              <Textarea
+                value={noteContent}
+                onChangeText={setNoteContent}
+                placeholder="Note"
+                numberOfLines={4}
+                className="text-base"
+              />
+            </View>
+          </TabsContent>
+        </Tabs>
+      </KeyboardAwareScrollView>
+      <KeyboardToolbar />
+    </KeyboardProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
-  },
-});
