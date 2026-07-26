@@ -34,6 +34,7 @@ export default function RootLayout() {
               sheetCornerRadius: 32,
             }}
           />
+          <Stack.Screen name="item/[id]" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style={statusScheme} />
         <PortalHost />

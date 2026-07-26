@@ -21,7 +21,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /** Approx. pill height + margin — screens use this to pad content clear of the bar. */
-export const FLOATING_TAB_BAR_HEIGHT = 88;
+export const FLOATING_TAB_BAR_HEIGHT = 72;
 
 /** Maps each route to its Lucide icon. Swap these to change the glyphs. */
 const ICONS: Record<string, LucideIcon> = {

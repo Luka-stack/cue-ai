@@ -18,3 +18,26 @@ export type ToDo = BaseItem & {
 };
 
 export type Item = Note | ToDo;
+
+type BaseMessage = {
+  id: string;
+  type: 'user' | 'ai' | 'system';
+};
+
+export type UserMessage = BaseMessage & {
+  type: 'user';
+  content: string;
+};
+
+export type AiMessage = BaseMessage & {
+  type: 'ai';
+  content: string;
+};
+
+export type SystemMessage<T extends Item = Item> = BaseMessage & {
+  type: 'system';
+  content: string;
+  item: T;
+};
+
+export type Message = UserMessage | AiMessage | SystemMessage<any>;

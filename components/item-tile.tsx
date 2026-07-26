@@ -1,8 +1,9 @@
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { Text } from '@/components/ui/text';
 import { Square } from '@/lib/icons';
 import { Item, Note, ToDo } from '@/models';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Checkbox } from './ui/checkbox';
 
@@ -10,25 +11,32 @@ type ItemTileProps = {
   item: Item;
 };
 
+function useOpenItem(id: string) {
+  const router = useRouter();
+  return () => router.push({ pathname: '/item/[id]', params: { id } });
+}
+
 function NoteTile({ item }: { item: Note }) {
+  const openItem = useOpenItem(item.id);
+
   return (
-    <View className="flex-row items-start gap-4">
-      <Square
-        size={14}
-        color="#EF4E5B"
-        fill="#EF4E5B"
-        className="mt-1.5 ml-1"
-      />
+    <Pressable
+      onPress={openItem}
+      accessibilityRole="button"
+      className="flex-row items-start gap-4 active:opacity-70"
+    >
+      <Square size={14} color="#EF4E5B" fill="#EF4E5B" className="mt-1.5 ml-1" />
 
       <View className="flex-1">
         <Text className="font-bold text-lg">{item.title}</Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
 function ToDoTile({ item }: { item: ToDo }) {
   const [isChecked, setIsChecked] = useState(item.completed ?? false);
+  const openItem = useOpenItem(item.id);
 
   return (
     <View className="flex-row items-start gap-4">
@@ -38,7 +46,11 @@ function ToDoTile({ item }: { item: ToDo }) {
         className="mt-1 ml-px"
       />
 
-      <View>
+      <Pressable
+        onPress={openItem}
+        accessibilityRole="button"
+        className="flex-1 active:opacity-70"
+      >
         <Text className="font-bold">{item.title}</Text>
         {item.date && (
           <Text className="text-sm text-muted-foreground">
@@ -51,7 +63,7 @@ function ToDoTile({ item }: { item: ToDo }) {
             })}
           </Text>
         )}
-      </View>
+      </Pressable>
     </View>
   );
 }
