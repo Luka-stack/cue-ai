@@ -33,15 +33,12 @@ export default function ChatScreen() {
 
   const fakeView = useAnimatedStyle(() => {
     return {
-      height: Math.abs(height.value),
+      height: Math.max(height.value + 8, FLOATING_TAB_BAR_HEIGHT),
     };
   }, []);
 
   return (
-    <View
-      className="flex-1 px-5 pt-4"
-      style={{ paddingBottom: FLOATING_TAB_BAR_HEIGHT }}
-    >
+    <View className="flex-1 px-5 pt-4">
       <FlatList
         className="flex-1"
         data={messages}
