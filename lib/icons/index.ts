@@ -1,9 +1,14 @@
 import {
+  CalendarClock,
   CalendarDays,
   Check,
   Clock,
+  Inbox,
+  List,
+  MessageCircle,
   Plus,
   Sparkle,
+  Square,
   X,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -25,6 +30,30 @@ function iconWithClassName(icon: LucideIcon) {
   });
 }
 
-[Plus, Sparkle, CalendarDays, Clock, X, Check].forEach(iconWithClassName);
+[
+  Plus,
+  Sparkle,
+  CalendarClock,
+  CalendarDays,
+  Clock,
+  Inbox,
+  X,
+  Check,
+  List,
+  MessageCircle,
+  Square,
+].forEach(iconWithClassName);
 
-export { CalendarDays, Check, Clock, Plus, Sparkle, X };
+export {
+  CalendarClock,
+  CalendarDays,
+  Check,
+  Clock,
+  Inbox,
+  List,
+  MessageCircle,
+  Plus,
+  Sparkle,
+  Square,
+  X,
+};
