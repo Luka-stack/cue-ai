@@ -1,4 +1,5 @@
 import { Text } from '@/components/ui/text';
+import { cn } from '@/lib/utils';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { LucideIcon } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
@@ -9,6 +10,7 @@ export type GradientTileProps = {
   icon: LucideIcon;
   /** expo-linear-gradient requires at least two colors. */
   colors: readonly [string, string, ...string[]];
+  active?: boolean;
   onPress?: () => void;
 };
 
@@ -17,14 +19,19 @@ export function GradientTile({
   count,
   icon: Icon,
   colors,
+  active = false,
   onPress,
 }: GradientTileProps) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
+      accessibilityState={{ selected: active }}
       accessibilityLabel={`${label}, ${count}`}
-      className="h-20 flex-1 overflow-hidden rounded-2xl active:opacity-80"
+      className={cn(
+        'h-20 flex-1 overflow-hidden rounded-2xl active:opacity-80 border-2 border-transparent',
+        active && 'border-indigo-500',
+      )}
     >
       <LinearGradient
         colors={colors}

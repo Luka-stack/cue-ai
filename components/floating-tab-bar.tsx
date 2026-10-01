@@ -1,12 +1,13 @@
 import { Text } from '@/components/ui/text';
 import { THEME } from '@/constants/theme';
+import { useChat } from '@/contexts/chat-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { List, MessageCircle } from '@/lib/icons';
+import { List, MessageCircle, Plus } from '@/lib/icons';
 import { cn } from '@/lib/utils';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import * as Haptics from 'expo-haptics';
 import type { LucideIcon } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import {
   Platform,
   Pressable,
@@ -29,7 +30,15 @@ const ICONS: Record<string, LucideIcon> = {
   'today/index': List,
 };
 
+const CHAT_ROUTE = 'chat/index';
+
 type ItemLayout = { x: number; width: number };
+
+function haptic() {
+  if (process.env.EXPO_OS === 'ios') {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }
+}
 
 export function FloatingTabBar({
   state,
@@ -38,6 +47,7 @@ export function FloatingTabBar({
 }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const theme = THEME[useColorScheme() ?? 'light'];
+  const { newChat, starting, busy } = useChat();
   const [layouts, setLayouts] = useState<Record<number, ItemLayout>>({});
 
   const left = useSharedValue(0);
@@ -67,6 +77,16 @@ export function FloatingTabBar({
     opacity: ready.value,
   }));
 
+  // Start a fresh conversation and show it.
+  const onNewChat = () => {
+    haptic();
+    void newChat();
+    const chatIndex = state.routes.findIndex((r) => r.name === CHAT_ROUTE);
+    if (chatIndex !== -1 && state.index !== chatIndex) {
+      navigation.navigate(CHAT_ROUTE);
+    }
+  };
+
   return (
     <View
       style={{
@@ -75,7 +95,6 @@ export function FloatingTabBar({
         right: 0,
         bottom: 0,
         alignItems: 'center',
-        // paddingBottom: insets.bottom + 8,
         paddingBottom: Platform.select({
           ios: insets.bottom,
           default: insets.bottom + 8,
@@ -85,7 +104,7 @@ export function FloatingTabBar({
     >
       <View className="flex-row items-center bg-background">
         {/* Track shares the highlight's coordinate space (no padding of its own). */}
-        <View style={{ position: 'relative', flexDirection: 'row' }}>
+        <View style={{ position: 'relative', flexDirection: 'row', alignItems: 'center' }}>
           <Animated.View
             style={[
               {
@@ -116,9 +135,7 @@ export function FloatingTabBar({
             };
 
             const onPress = () => {
-              if (process.env.EXPO_OS === 'ios') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
+              haptic();
               const event = navigation.emit({
                 type: 'tabPress',
                 target: route.key,
@@ -130,33 +147,51 @@ export function FloatingTabBar({
             };
 
             return (
-              <Pressable
-                key={route.key}
-                onLayout={onLayout}
-                onPress={onPress}
-                accessibilityRole="button"
-                accessibilityState={focused ? { selected: true } : {}}
-                accessibilityLabel={label}
-                className="flex-row items-center gap-2 rounded-full px-6 py-2"
-              >
-                {Icon ? (
-                  <Icon
-                    size={20}
+              <Fragment key={route.key}>
+                {/* The "new chat" button sits between the tabs: <Chat <+> List>. */}
+                {index > 0 ? (
+                  <Pressable
+                    onPress={onNewChat}
+                    disabled={starting || busy}
+                    accessibilityRole="button"
+                    accessibilityLabel="New chat"
+                    hitSlop={8}
                     className={cn(
-                      'text-muted-foreground',
+                      'mx-1 size-9 items-center justify-center rounded-full bg-indigo-500 active:opacity-80',
+                      (starting || busy) && 'opacity-50',
+                    )}
+                  >
+                    <Plus size={20} color="white" strokeWidth={2.5} />
+                  </Pressable>
+                ) : null}
+
+                <Pressable
+                  onLayout={onLayout}
+                  onPress={onPress}
+                  accessibilityRole="button"
+                  accessibilityState={focused ? { selected: true } : {}}
+                  accessibilityLabel={label}
+                  className="flex-row items-center gap-2 rounded-full px-6 py-2"
+                >
+                  {Icon ? (
+                    <Icon
+                      size={20}
+                      className={cn(
+                        'text-muted-foreground',
+                        focused && 'text-primary-foreground',
+                      )}
+                    />
+                  ) : null}
+                  <Text
+                    className={cn(
+                      'text-sm font-medium text-muted-foreground',
                       focused && 'text-primary-foreground',
                     )}
-                  />
-                ) : null}
-                <Text
-                  className={cn(
-                    'text-sm font-medium text-muted-foreground',
-                    focused && 'text-primary-foreground',
-                  )}
-                >
-                  {label}
-                </Text>
-              </Pressable>
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              </Fragment>
             );
           })}
         </View>

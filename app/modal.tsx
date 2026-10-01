@@ -4,12 +4,14 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Text } from '@/components/ui/text';
 import { Textarea } from '@/components/ui/textarea';
+import { useUserId } from '@/contexts/user-context';
+import { errorMessage, itemsApi } from '@/lib/api';
 import { CalendarDays, Check, Clock, X } from '@/lib/icons';
 import { cn } from '@/lib/utils';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
 import {
   KeyboardAwareScrollView,
   KeyboardProvider,
@@ -24,6 +26,8 @@ type WithDatetime = {
 
 export default function ModalScreen() {
   const router = useRouter();
+  const userId = useUserId();
+  const [saving, setSaving] = useState(false);
 
   // TAB TODO
   const [withDate, setWithDate] = useState<WithDatetime>({
@@ -41,31 +45,37 @@ export default function ModalScreen() {
   const [todoTitle, setTodoTitle] = useState('');
   const [todoNote, setTodoNote] = useState('');
 
-  const canSaveTodo = todoTitle?.trim().length > 0;
+  const canSaveTodo = todoTitle?.trim().length > 0 && !saving;
 
-  const handleSaveTodo = () => {
-    if (canSaveTodo) {
-      let date = new Date();
+  const handleSaveTodo = async () => {
+    if (!canSaveTodo) return;
+
+    // Only send a date when the user picked one; the server stores it in UTC.
+    let date: string | undefined;
+    if (withDate.date || withTime.date) {
+      const value = new Date();
+      value.setSeconds(0, 0);
 
       if (withDate.date) {
-        date.setFullYear(withDate.date.getFullYear());
-        date.setMonth(withDate.date.getMonth());
-        date.setDate(withDate.date.getDate());
+        value.setFullYear(
+          withDate.date.getFullYear(),
+          withDate.date.getMonth(),
+          withDate.date.getDate(),
+        );
       }
 
       if (withTime.date) {
-        date.setHours(withTime.date.getHours());
-        date.setMinutes(withTime.date.getMinutes());
+        value.setHours(withTime.date.getHours(), withTime.date.getMinutes());
       }
-
-      const request = {
-        title: todoTitle,
-        note: todoNote,
-        date,
-      };
-
-      router.dismiss();
+      date = value.toISOString();
     }
+
+    await save({
+      type: 'todo',
+      title: todoTitle.trim(),
+      content: todoNote.trim() || undefined,
+      date,
+    });
   };
 
   // TAB NOTE
@@ -73,17 +83,15 @@ export default function ModalScreen() {
   const [noteContent, setNoteContent] = useState('');
 
   const canSaveNote =
-    noteTitle?.trim().length > 0 || noteContent?.trim().length > 0;
+    (noteTitle?.trim().length > 0 || noteContent?.trim().length > 0) && !saving;
 
-  const handleSaveNote = () => {
-    if (canSaveNote) {
-      const request = {
-        title: noteTitle,
-        content: noteContent,
-      };
-
-      router.dismiss();
-    }
+  const handleSaveNote = async () => {
+    if (!canSaveNote) return;
+    await save({
+      type: 'note',
+      title: noteTitle.trim() || undefined,
+      content: noteContent.trim() || undefined,
+    });
   };
 
   // GLOBAL
@@ -92,6 +100,19 @@ export default function ModalScreen() {
   const canSave = tab === 'TODO' ? canSaveTodo : canSaveNote;
 
   const handleSave = tab === 'TODO' ? handleSaveTodo : handleSaveNote;
+
+  const save = async (payload: Parameters<typeof itemsApi.create>[1]) => {
+    setSaving(true);
+
+    try {
+      await itemsApi.create(userId, payload);
+      router.dismiss();
+    } catch (error) {
+      Alert.alert('Could not save', errorMessage(error));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <KeyboardProvider>
