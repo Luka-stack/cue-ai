@@ -1,11 +1,28 @@
-import { Plus, Sparkle } from '@/lib/icons';
-import { useRouter } from 'expo-router';
+import { useChat } from '@/contexts/chat-context';
+import { Plus, Sparkle, SquarePen } from '@/lib/icons';
+import { cn } from '@/lib/utils';
+import * as Haptics from 'expo-haptics';
+import { usePathname, useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { Button } from './ui/button';
 import { Text } from './ui/text';
 
 export function Header() {
   const router = useRouter();
+  const pathname = usePathname();
+  const { newChat, starting, busy } = useChat();
+
+  // On Chat the action starts a fresh conversation; elsewhere it adds an item.
+  const onChat = pathname === '/chat';
+  const disabled = onChat && (starting || busy);
+
+  const onPress = () => {
+    if (process.env.EXPO_OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    if (onChat) void newChat();
+    else router.push('/modal');
+  };
 
   return (
     <View className="flex flex-row justify-between items-center">
@@ -18,11 +35,20 @@ export function Header() {
       </View>
 
       <Button
-        onPress={() => router.push('/modal')}
-        className="rounded-lg size-9 bg-slate-100 border-slate-100"
+        onPress={onPress}
+        disabled={disabled}
+        accessibilityLabel={onChat ? 'New chat' : 'Add item'}
+        className={cn(
+          'rounded-lg size-9 bg-slate-100 border-slate-100',
+          disabled && 'opacity-50',
+        )}
         variant="outline"
       >
-        <Plus size={20} className="text-foreground" />
+        {onChat ? (
+          <SquarePen size={18} className="text-foreground" />
+        ) : (
+          <Plus size={20} className="text-foreground" />
+        )}
       </Button>
     </View>
   );

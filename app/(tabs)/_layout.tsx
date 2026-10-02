@@ -19,7 +19,8 @@ export default function TabLayout() {
           screenOptions={{ headerShown: false }}
         >
           <Tabs.Screen name="chat/index" options={{ title: 'Chat' }} />
-          <Tabs.Screen name="today/index" options={{ title: 'List' }} />
+          <Tabs.Screen name="todos/index" options={{ title: 'ToDos' }} />
+          <Tabs.Screen name="notes/index" options={{ title: 'Notes' }} />
         </Tabs>
       </KeyboardProvider>
     </SafeAreaView>

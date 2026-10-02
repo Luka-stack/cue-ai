@@ -5,10 +5,13 @@ import {
   Clock,
   Inbox,
   List,
+  ListTodo,
   MessageCircle,
+  NotebookPen,
   Plus,
   Sparkle,
   Square,
+  SquarePen,
   X,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -40,8 +43,11 @@ function iconWithClassName(icon: LucideIcon) {
   X,
   Check,
   List,
+  ListTodo,
   MessageCircle,
+  NotebookPen,
   Square,
+  SquarePen,
 ].forEach(iconWithClassName);
 
 export {
@@ -51,9 +57,12 @@ export {
   Clock,
   Inbox,
   List,
+  ListTodo,
   MessageCircle,
+  NotebookPen,
   Plus,
   Sparkle,
   Square,
+  SquarePen,
   X,
 };

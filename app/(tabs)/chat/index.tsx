@@ -1,4 +1,4 @@
-import { FLOATING_TAB_BAR_HEIGHT } from '@/components/floating-tab-bar';
+import { useFloatingTabBarInset } from '@/components/floating-tab-bar';
 import { Message } from '@/components/messages/message';
 import { ThinkingMessage } from '@/components/messages/thinking-message';
 import { Button } from '@/components/ui/button';
@@ -32,14 +32,15 @@ const useGradualAnimation = () => {
 export default function ChatScreen() {
   const { messages, pendingReview, busy, starting, submit } = useChat();
   const { height } = useGradualAnimation();
+  const tabBarInset = useFloatingTabBarInset();
   const [draft, setDraft] = useState('');
   const listRef = useRef<FlatList>(null);
 
   const fakeView = useAnimatedStyle(() => {
     return {
-      height: Math.max(height.value + 8, FLOATING_TAB_BAR_HEIGHT),
+      height: Math.max(height.value + 8, tabBarInset),
     };
-  }, []);
+  }, [tabBarInset]);
 
   const canSend = draft.trim().length > 0 && !busy && !starting;
 

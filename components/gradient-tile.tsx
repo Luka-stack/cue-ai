@@ -39,13 +39,17 @@ export function GradientTile({
         end={{ x: 1, y: 1 }}
         style={{ flex: 1 }}
       >
-        <View className="flex-row flex-1 justify-between p-3">
-          <View className="flex items-start justify-between gap-1.5">
-            <Icon size={32} color="white" />
-            <Text className="text-base font-semibold text-white">{label}</Text>
+        <View className="flex-1 justify-between p-3">
+          <View className="flex-row items-start justify-between">
+            <Icon size={26} color="white" />
+            <Text className="text-2xl font-bold text-white">{count}</Text>
           </View>
-
-          <Text className="text-3xl font-bold text-white">{count}</Text>
+          <Text
+            className="text-sm font-semibold text-white"
+            numberOfLines={1}
+          >
+            {label}
+          </Text>
         </View>
       </LinearGradient>
     </Pressable>

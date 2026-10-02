@@ -3,7 +3,11 @@
  * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
  */
 
-import { DarkTheme, DefaultTheme, type Theme } from 'expo-router/react-navigation';
+import {
+  DarkTheme,
+  DefaultTheme,
+  type Theme,
+} from 'expo-router/react-navigation';
 import { Platform } from 'react-native';
 
 export const Fonts = Platform.select({
@@ -42,6 +46,7 @@ export const THEME = {
     popoverForeground: 'hsl(0 0% 3.9%)',
     primary: 'hsl(0 0% 9%)',
     primaryForeground: 'hsl(0 0% 98%)',
+    primarySoft: 'hsla(0, 0%, 9%, 0.08)',
     secondary: 'hsl(0 0% 96.1%)',
     secondaryForeground: 'hsl(0 0% 9%)',
     muted: 'hsl(0 0% 96.1%)',
@@ -69,6 +74,7 @@ export const THEME = {
     popoverForeground: 'hsl(0 0% 98%)',
     primary: 'hsl(0 0% 98%)',
     primaryForeground: 'hsl(0 0% 9%)',
+    primarySoft: 'hsla(0, 0%, 98%, 0.12)',
     secondary: 'hsl(0 0% 14.9%)',
     secondaryForeground: 'hsl(0 0% 98%)',
     muted: 'hsl(0 0% 14.9%)',

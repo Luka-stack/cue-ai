@@ -1,43 +1,71 @@
-import { Text } from '@/components/ui/text';
-import { THEME } from '@/constants/theme';
-import { useChat } from '@/contexts/chat-context';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { List, MessageCircle, Plus } from '@/lib/icons';
-import { cn } from '@/lib/utils';
-import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import * as Haptics from 'expo-haptics';
+import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import type { LucideIcon } from 'lucide-react-native';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import {
-  Platform,
   Pressable,
+  StyleSheet,
   View,
   type LayoutChangeEvent,
 } from 'react-native';
 import Animated, {
+  Extrapolation,
+  interpolate,
   useAnimatedStyle,
+  useDerivedValue,
+  useReducedMotion,
   useSharedValue,
-  withTiming,
+  withSpring,
+  type SharedValue,
+  type WithSpringConfig,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-/** Approx. pill height + margin — screens use this to pad content clear of the bar. */
-export const FLOATING_TAB_BAR_HEIGHT = 72;
+import { Text } from '@/components/ui/text';
+import { THEME } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { ListTodo, MessageCircle, NotebookPen } from '@/lib/icons';
 
 /** Maps each route to its Lucide icon. Swap these to change the glyphs. */
 const ICONS: Record<string, LucideIcon> = {
   'chat/index': MessageCircle,
-  'today/index': List,
+  'todos/index': ListTodo,
+  'notes/index': NotebookPen,
 };
 
-const CHAT_ROUTE = 'chat/index';
+const ITEM_HEIGHT = 52;
+const BAR_PADDING = 6;
+/** Horizontal gap between the bubble and the edges of its tab slot. */
+const BUBBLE_INSET = 8;
+const BAR_HEIGHT = ITEM_HEIGHT + BAR_PADDING * 2;
+/** Breathing room between the bar and the content scrolled above it. */
+const CONTENT_GAP = 12;
 
-type ItemLayout = { x: number; width: number };
+/**
+ * The bubble's edges move on different springs: the edge facing the
+ * destination leads, the other one trails — so the bubble stretches toward
+ * the new tab and snaps back to its normal size when it lands.
+ */
+const LEAD_SPRING: WithSpringConfig = {
+  stiffness: 380,
+  damping: 30,
+  mass: 0.8,
+};
+const TRAIL_SPRING: WithSpringConfig = { stiffness: 170, damping: 22, mass: 1 };
 
-function haptic() {
-  if (process.env.EXPO_OS === 'ios') {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }
+/**
+ * The bar extends under the home indicator. Items may overlap the top part of
+ * the inset (the indicator itself is a thin line near the very bottom), which
+ * keeps the gap below the icons tight.
+ */
+function useBarBottomPadding() {
+  const insets = useSafeAreaInsets();
+  return Math.max(insets.bottom - 18, 4);
+}
+
+/** Bottom space a screen must leave so its content clears the tab bar. */
+export function useFloatingTabBarInset() {
+  return useBarBottomPadding() + BAR_HEIGHT + CONTENT_GAP;
 }
 
 export function FloatingTabBar({
@@ -45,157 +73,214 @@ export function FloatingTabBar({
   descriptors,
   navigation,
 }: BottomTabBarProps) {
-  const insets = useSafeAreaInsets();
+  const paddingBottom = useBarBottomPadding();
   const theme = THEME[useColorScheme() ?? 'light'];
-  const { newChat, starting, busy } = useChat();
-  const [layouts, setLayouts] = useState<Record<number, ItemLayout>>({});
+  const reduceMotion = useReducedMotion();
 
-  const left = useSharedValue(0);
-  const width = useSharedValue(0);
-  const ready = useSharedValue(0);
-  const positioned = useRef(false);
+  // Bubble edges in tab-slot units (tab i spans i..i+1); scaled to pixels by
+  // the measured slot width, since tabs share the full screen width.
+  const leftEdge = useSharedValue(state.index);
+  const rightEdge = useSharedValue(state.index + 1);
+  const slotWidth = useSharedValue(0);
+  const prevIndex = useRef(state.index);
 
-  // Move the highlight to the focused tab: snap into place the first time its
-  // size is known, then slide smoothly on subsequent tab switches.
   useEffect(() => {
-    const layout = layouts[state.index];
-    if (!layout) return;
-    if (positioned.current) {
-      left.value = withTiming(layout.x, { duration: 220 });
-      width.value = withTiming(layout.width, { duration: 220 });
-    } else {
-      positioned.current = true;
-      left.value = layout.x;
-      width.value = layout.width;
-      ready.value = 1;
-    }
-  }, [state.index, layouts, left, width, ready]);
+    const from = prevIndex.current;
+    const to = state.index;
 
-  const highlightStyle = useAnimatedStyle(() => ({
-    left: left.value,
-    width: width.value,
-    opacity: ready.value,
+    if (from === to) return;
+
+    prevIndex.current = to;
+    const left = to;
+    const right = to + 1;
+
+    if (reduceMotion) {
+      leftEdge.value = left;
+      rightEdge.value = right;
+      return;
+    }
+
+    const movingRight = to > from;
+    leftEdge.value = withSpring(left, movingRight ? TRAIL_SPRING : LEAD_SPRING);
+    rightEdge.value = withSpring(
+      right,
+      movingRight ? LEAD_SPRING : TRAIL_SPRING,
+    );
+  }, [state.index, reduceMotion, leftEdge, rightEdge]);
+
+  const bubbleStyle = useAnimatedStyle(() => ({
+    left: leftEdge.value * slotWidth.value + BUBBLE_INSET,
+    width: Math.max(
+      (rightEdge.value - leftEdge.value) * slotWidth.value - BUBBLE_INSET * 2,
+      0,
+    ),
   }));
 
-  // Start a fresh conversation and show it.
-  const onNewChat = () => {
-    haptic();
-    void newChat();
-    const chatIndex = state.routes.findIndex((r) => r.name === CHAT_ROUTE);
-    if (chatIndex !== -1 && state.index !== chatIndex) {
-      navigation.navigate(CHAT_ROUTE);
-    }
+  const onLayout = (e: LayoutChangeEvent) => {
+    slotWidth.value = e.nativeEvent.layout.width / state.routes.length;
   };
 
   return (
     <View
+      className="bg-card"
       style={{
         position: 'absolute',
         left: 0,
         right: 0,
         bottom: 0,
-        alignItems: 'center',
-        paddingBottom: Platform.select({
-          ios: insets.bottom,
-          default: insets.bottom + 8,
-        }),
-        pointerEvents: 'box-none',
+        paddingTop: BAR_PADDING,
+        paddingBottom,
+        paddingHorizontal: BAR_PADDING,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: theme.border,
       }}
     >
-      <View className="flex-row items-center bg-background">
-        {/* Track shares the highlight's coordinate space (no padding of its own). */}
-        <View style={{ position: 'relative', flexDirection: 'row', alignItems: 'center' }}>
-          <Animated.View
-            style={[
-              {
-                position: 'absolute',
-                top: 0,
-                bottom: 0,
-                borderRadius: 9999,
-                backgroundColor: theme.primary,
-                pointerEvents: 'none',
-              },
-              highlightStyle,
-            ]}
-          />
+      <View
+        accessibilityRole="tablist"
+        onLayout={onLayout}
+        className="flex-row"
+      >
+        <Animated.View
+          style={[
+            {
+              position: 'absolute',
+              top: 0,
+              height: ITEM_HEIGHT,
+              borderRadius: 16,
+              borderCurve: 'continuous',
+              backgroundColor: theme.primarySoft,
+              pointerEvents: 'none',
+            },
+            bubbleStyle,
+          ]}
+        />
 
-          {state.routes.map((route, index) => {
-            const focused = state.index === index;
-            const { options } = descriptors[route.key];
-            const label = (options.title ?? route.name) as string;
-            const Icon = ICONS[route.name];
+        {state.routes.map((route, index) => {
+          const focused = state.index === index;
+          const { options } = descriptors[route.key];
 
-            const onLayout = (e: LayoutChangeEvent) => {
-              const { x, width: w } = e.nativeEvent.layout;
-              setLayouts((prev) =>
-                prev[index]?.x === x && prev[index]?.width === w
-                  ? prev
-                  : { ...prev, [index]: { x, width: w } },
-              );
-            };
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
 
-            const onPress = () => {
-              haptic();
-              const event = navigation.emit({
-                type: 'tabPress',
-                target: route.key,
-                canPreventDefault: true,
-              });
-              if (!focused && !event.defaultPrevented) {
-                navigation.navigate(route.name, route.params);
-              }
-            };
+            if (!focused && !event.defaultPrevented) {
+              if (process.env.EXPO_OS === 'ios') Haptics.selectionAsync();
+              navigation.navigate(route.name, route.params);
+            }
+          };
 
-            return (
-              <Fragment key={route.key}>
-                {/* The "new chat" button sits between the tabs: <Chat <+> List>. */}
-                {index > 0 ? (
-                  <Pressable
-                    onPress={onNewChat}
-                    disabled={starting || busy}
-                    accessibilityRole="button"
-                    accessibilityLabel="New chat"
-                    hitSlop={8}
-                    className={cn(
-                      'mx-1 size-9 items-center justify-center rounded-full bg-indigo-500 active:opacity-80',
-                      (starting || busy) && 'opacity-50',
-                    )}
-                  >
-                    <Plus size={20} color="white" strokeWidth={2.5} />
-                  </Pressable>
-                ) : null}
-
-                <Pressable
-                  onLayout={onLayout}
-                  onPress={onPress}
-                  accessibilityRole="button"
-                  accessibilityState={focused ? { selected: true } : {}}
-                  accessibilityLabel={label}
-                  className="flex-row items-center gap-2 rounded-full px-6 py-2"
-                >
-                  {Icon ? (
-                    <Icon
-                      size={20}
-                      className={cn(
-                        'text-muted-foreground',
-                        focused && 'text-primary-foreground',
-                      )}
-                    />
-                  ) : null}
-                  <Text
-                    className={cn(
-                      'text-sm font-medium text-muted-foreground',
-                      focused && 'text-primary-foreground',
-                    )}
-                  >
-                    {label}
-                  </Text>
-                </Pressable>
-              </Fragment>
-            );
-          })}
-        </View>
+          return (
+            <TabItem
+              key={route.key}
+              index={index}
+              label={(options.title ?? route.name) as string}
+              icon={ICONS[route.name]}
+              focused={focused}
+              onPress={onPress}
+              leftEdge={leftEdge}
+              rightEdge={rightEdge}
+              activeColor={theme.primary}
+              inactiveColor={theme.mutedForeground}
+            />
+          );
+        })}
       </View>
     </View>
   );
 }
+
+type TabItemProps = {
+  index: number;
+  label: string;
+  icon?: LucideIcon;
+  focused: boolean;
+  onPress: () => void;
+  leftEdge: SharedValue<number>;
+  rightEdge: SharedValue<number>;
+  activeColor: string;
+  inactiveColor: string;
+};
+
+function TabItem({
+  index,
+  label,
+  icon: Icon,
+  focused,
+  onPress,
+  leftEdge,
+  rightEdge,
+  activeColor,
+  inactiveColor,
+}: TabItemProps) {
+  const pressed = useSharedValue(0);
+
+  // How much the bubble covers this tab (0..1), so the active tint fades in
+  // as the bubble arrives rather than flipping the moment the tab is tapped.
+  const coverage = useDerivedValue(() => {
+    const center = (leftEdge.value + rightEdge.value) / 2 - 0.5;
+    return interpolate(
+      Math.abs(center - index),
+      [0, 0.6],
+      [1, 0],
+      Extrapolation.CLAMP,
+    );
+  });
+  const activeStyle = useAnimatedStyle(() => ({ opacity: coverage.value }));
+  const inactiveStyle = useAnimatedStyle(() => ({
+    opacity: 1 - coverage.value,
+  }));
+
+  const pressStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: withSpring(pressed.value ? 0.9 : 1, LEAD_SPRING) }],
+  }));
+
+  const content = (color: string, weight: 'font-medium' | 'font-semibold') => (
+    <>
+      {Icon ? <Icon size={22} color={color} strokeWidth={2} /> : null}
+      <Text className={`text-[11px] ${weight}`} style={{ color }}>
+        {label}
+      </Text>
+    </>
+  );
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => (pressed.value = 1)}
+      onPressOut={() => (pressed.value = 0)}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: focused }}
+      accessibilityLabel={label}
+      style={{ flex: 1, height: ITEM_HEIGHT }}
+    >
+      <Animated.View style={[{ flex: 1 }, pressStyle]}>
+        <Animated.View style={[styles.layer, inactiveStyle]}>
+          {content(inactiveColor, 'font-medium')}
+        </Animated.View>
+        <Animated.View style={[styles.layer, styles.overlay, activeStyle]}>
+          {content(activeColor, 'font-semibold')}
+        </Animated.View>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  layer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    pointerEvents: 'none',
+  },
+});
