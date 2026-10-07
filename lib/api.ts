@@ -1,6 +1,5 @@
 import type {
   Item,
-  ItemCounts,
   ItemCreate,
   ItemFilter,
   ItemUpdate,
@@ -127,11 +126,6 @@ async function request<T>(
 export const itemsApi = {
   list: (userId: string, filter: ItemFilter = 'all') =>
     request<Item[]>(userId, '/items', { query: { filter, tz: getTimeZone() } }),
-
-  counts: (userId: string) =>
-    request<ItemCounts>(userId, '/items/counts', {
-      query: { tz: getTimeZone() },
-    }),
 
   get: (userId: string, id: string) => request<Item>(userId, `/items/${id}`),
 

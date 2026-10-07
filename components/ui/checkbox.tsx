@@ -19,10 +19,10 @@ function Checkbox({
   return (
     <CheckboxPrimitive.Root
       className={cn(
-        'border-[#1F84E4] size-5 shrink-0 rounded-[4px] border-2 shadow-sm shadow-black/5 overflow-hidden',
+        'border-[#4F46E5] size-5 shrink-0 rounded-full border-2 overflow-hidden',
         // Paint the fill on the same element as the border so there's no
         // inset child and therefore no transparent seam at the rounded corners.
-        props.checked && 'bg-[#1F84E4]',
+        props.checked && 'bg-[#4F46E5]',
         props.checked && checkedClassName,
         props.disabled && 'opacity-50',
         className,

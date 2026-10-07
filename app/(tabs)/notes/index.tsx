@@ -1,21 +1,41 @@
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   RefreshControl,
   View,
 } from 'react-native';
 
 import { useFloatingTabBarInset } from '@/components/floating-tab-bar';
-import { ItemTile } from '@/components/item-tile';
+import { NoteCard } from '@/components/note-card';
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useItems } from '@/hooks/use-items';
+import { Plus } from '@/lib/icons';
+import { Note } from '@/models';
+import { useRouter } from 'expo-router';
 
 export default function NotesScreen() {
-  const { items, loading, refreshing, error, refetch } = useItems('notes');
+  const router = useRouter();
+  const { items, loading, refreshing, error, refetch } =
+    useItems<Note>('notes');
   const tabBarInset = useFloatingTabBarInset();
 
+  const subtitle = `${items.length} ${items.length === 1 ? 'note' : 'notes'}`;
+
   return (
-    <View className="flex-1 gap-3 px-3 pt-4">
+    <View className="flex-1">
+      <View className="flex-row items-start justify-between px-5 pt-3 pb-4">
+        <View>
+          <Text className="text-3xl font-bold tracking-tight">Notes</Text>
+          <Text className="text-sm text-muted-foreground">{subtitle}</Text>
+        </View>
+
+        {/* <OverflowMenu
+          items={[{ label: 'New Note', onPress: () => router.push('/note/new') }]}
+        /> */}
+      </View>
+
       {error ? (
         <View className="bg-red-50 border border-red-200 rounded-xl px-3 py-2">
           <Text className="text-sm text-red-600">{error}</Text>
@@ -27,26 +47,39 @@ export default function NotesScreen() {
           <ActivityIndicator color="#6366f1" />
         </View>
       ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <ItemTile item={item} />}
-          contentContainerStyle={{ paddingBottom: tabBarInset }}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => refetch('refresh')}
-            />
-          }
-          ListEmptyComponent={
-            <View className="items-center justify-center py-12">
-              <Text variant="muted" className="text-center">
-                No notes yet. Tell the chat what is on your mind.
-              </Text>
-            </View>
-          }
-        />
+        <>
+          <FlatList
+            data={items}
+            keyExtractor={(note) => note.id}
+            renderItem={({ item }) => <NoteCard note={item} />}
+            contentContainerStyle={{
+              paddingHorizontal: 12,
+              paddingBottom: tabBarInset,
+            }}
+            showsVerticalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View className="h-2" />}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={() => refetch('refresh')}
+              />
+            }
+            ListEmptyComponent={
+              <View className="items-center justify-center py-12">
+                <Text variant="muted" className="text-center">
+                  No notes yet. Tell the chat what is on your mind.
+                </Text>
+              </View>
+            }
+          />
+
+          <Pressable
+            onPress={() => router.push('/note/new')}
+            className="absolute bottom-24 right-4 h-12 w-12 items-center justify-center rounded-full bg-[#4F46E5]"
+          >
+            <Icon as={Plus} size={24} className="stroke-white" />
+          </Pressable>
+        </>
       )}
     </View>
   );

@@ -1,72 +1,63 @@
 import { useFloatingTabBarInset } from '@/components/floating-tab-bar';
-import { GradientTile } from '@/components/gradient-tile';
-import { ItemTile } from '@/components/item-tile';
-
+import { TodoCard } from '@/components/todo-card';
+import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useItems } from '@/hooks/use-items';
-import { CalendarDays, Check, Inbox } from '@/lib/icons';
-import type { ItemFilter } from '@/models';
-import { useState } from 'react';
+import { groupTodos } from '@/lib/todos';
+import type { ToDo } from '@/models';
+import { useRouter } from 'expo-router';
+import { Plus } from 'lucide-react-native';
+import { useMemo } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
+  Pressable,
   RefreshControl,
+  SectionList,
   View,
 } from 'react-native';
 
-const TILES = [
-  {
-    id: 'today',
-    label: 'Today',
-    icon: CalendarDays,
-    colors: ['#4CB8F0', '#1F84E4'],
-  },
-  {
-    id: 'all',
-    label: 'All',
-    icon: Inbox,
-    colors: ['#5A5A5E', '#1C1C1E'],
-  },
-  {
-    id: 'completed',
-    label: 'Completed',
-    icon: Check,
-    colors: ['#B0B8C1', '#707C8A'],
-  },
-] as const satisfies readonly { id: ItemFilter; [key: string]: unknown }[];
-
-type TodoFilter = (typeof TILES)[number]['id'];
-
-const EMPTY_TEXT: Record<TodoFilter, string> = {
-  all: 'Nothing captured yet. Tell the chat what is on your mind.',
-  today: 'Nothing due today.',
-  completed: 'Nothing completed yet.',
-};
+type Section = { key: 'open' | 'completed'; data: ToDo[] };
 
 export default function TodosScreen() {
-  const [filter, setFilter] = useState<TodoFilter>('all');
+  const router = useRouter();
   const tabBarInset = useFloatingTabBarInset();
-  const { items, counts, loading, refreshing, error, refetch, updateItem } =
-    useItems(filter);
+  const { items, loading, refreshing, error, refetch, updateItem } =
+    useItems<ToDo>('todos');
+
+  const { open, completed } = useMemo(() => groupTodos(items), [items]);
+
+  const sections = useMemo<Section[]>(
+    () =>
+      [
+        { key: 'open' as const, data: open },
+        { key: 'completed' as const, data: completed },
+      ].filter((section) => section.data.length > 0),
+    [open, completed],
+  );
+
+  const subtitle = `${open.length} ${open.length === 1 ? 'to-do' : 'to-dos'}`;
 
   return (
-    <View
-      className="flex-1 gap-3 px-3 pt-4"
-    >
-      <View className="flex-row gap-3">
-        {TILES.map((tile) => (
-          <GradientTile
-            key={tile.id}
-            {...tile}
-            count={counts[tile.id]}
-            active={filter === tile.id}
-            onPress={() => setFilter(tile.id)}
-          />
-        ))}
+    <View className="flex-1">
+      <View className="flex-row items-start justify-between px-5 pt-3 pb-4">
+        <View>
+          <Text className="text-3xl font-bold tracking-tight">To-dos</Text>
+          <Text className="text-sm text-muted-foreground">{subtitle}</Text>
+        </View>
+
+        {/* <OverflowMenu
+          items={[
+            {
+              label: 'New to-do',
+              icon: Plus,
+              onPress: () => router.push('/todo/new'),
+            },
+          ]}
+        /> */}
       </View>
 
       {error ? (
-        <View className="bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+        <View className="mx-3 mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2">
           <Text className="text-sm text-red-600">{error}</Text>
         </View>
       ) : null}
@@ -76,33 +67,54 @@ export default function TodosScreen() {
           <ActivityIndicator color="#6366f1" />
         </View>
       ) : (
-        <FlatList
-          data={items}
-          contentContainerStyle={{ paddingBottom: tabBarInset }}
-          showsVerticalScrollIndicator={false}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <ItemTile
-              item={item}
-              onToggleCompleted={(completed) =>
-                updateItem(item.id, { completed })
-              }
-            />
-          )}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => refetch('refresh')}
-            />
-          }
-          ListEmptyComponent={
-            <View className="items-center justify-center py-12">
-              <Text variant="muted" className="text-center">
-                {EMPTY_TEXT[filter]}
-              </Text>
-            </View>
-          }
-        />
+        <>
+          <SectionList
+            sections={sections}
+            keyExtractor={(todo) => todo.id}
+            stickySectionHeadersEnabled={false}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingHorizontal: 12,
+              paddingBottom: tabBarInset,
+            }}
+            ItemSeparatorComponent={() => <View className="h-2" />}
+            renderItem={({ item }) => (
+              <TodoCard
+                todo={item}
+                onToggleCompleted={(done) =>
+                  updateItem(item.id, { completed: done })
+                }
+              />
+            )}
+            renderSectionHeader={({ section }) =>
+              section.key === 'completed' ? (
+                <Text className="px-2 pt-6 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Completed · {section.data.length}
+                </Text>
+              ) : null
+            }
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={() => refetch('refresh')}
+              />
+            }
+            ListEmptyComponent={
+              <View className="items-center justify-center py-12">
+                <Text variant="muted" className="text-center">
+                  No to-dos yet. Tell the chat what you need to get done.
+                </Text>
+              </View>
+            }
+          />
+
+          <Pressable
+            onPress={() => router.push('/todo/new')}
+            className="absolute bottom-24 right-4 h-12 w-12 items-center justify-center rounded-full bg-[#4F46E5]"
+          >
+            <Icon as={Plus} size={24} className="stroke-white" />
+          </Pressable>
+        </>
       )}
     </View>
   );

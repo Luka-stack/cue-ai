@@ -1,15 +1,12 @@
 import { useUserId } from '@/contexts/user-context';
 import { errorMessage, itemsApi } from '@/lib/api';
-import type { Item, ItemCounts, ItemFilter, ItemUpdate } from '@/models';
+import type { Item, ItemFilter, ItemUpdate } from '@/models';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 
-const EMPTY_COUNTS: ItemCounts = { today: 0, notes: 0, all: 0, completed: 0 };
-
-export function useItems(filter: ItemFilter) {
+export function useItems<T extends Item>(filter: ItemFilter) {
   const userId = useUserId();
-  const [items, setItems] = useState<Item[]>([]);
-  const [counts, setCounts] = useState<ItemCounts>(EMPTY_COUNTS);
+  const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,15 +19,11 @@ export function useItems(filter: ItemFilter) {
       if (mode === 'refresh') setRefreshing(true);
 
       try {
-        const [list, nextCounts] = await Promise.all([
-          itemsApi.list(userId, filter),
-          itemsApi.counts(userId),
-        ]);
+        const list = (await itemsApi.list(userId, filter)) as T[];
 
         if (id !== requestId.current) return;
 
         setItems(list);
-        setCounts(nextCounts);
         setError(null);
       } catch (err) {
         if (id !== requestId.current) return;
@@ -56,17 +49,12 @@ export function useItems(filter: ItemFilter) {
 
   const updateItem = useCallback(
     async (id: string, patch: ItemUpdate) => {
-      const updated = await itemsApi.update(userId, id, patch);
+      const updated = (await itemsApi.update(userId, id, patch)) as T;
       setItems((prev) => prev.map((it) => (it.id === id ? updated : it)));
-      // Counts (completed, today) may have shifted.
-      itemsApi
-        .counts(userId)
-        .then(setCounts)
-        .catch(() => undefined);
       return updated;
     },
     [userId],
   );
 
-  return { items, counts, loading, refreshing, error, refetch, updateItem };
+  return { items, loading, refreshing, error, refetch, updateItem };
 }

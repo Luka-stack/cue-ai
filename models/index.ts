@@ -6,6 +6,8 @@ export type TodoStatus = 'not started' | 'in progress' | 'done' | 'archived';
 type BaseItem = {
   id: string;
   type: 'note' | 'todo';
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type Note = BaseItem & {
@@ -17,21 +19,17 @@ export type Note = BaseItem & {
 export type ToDo = BaseItem & {
   type: 'todo';
   title: string;
-  /** UTC ISO-8601 (Z suffix). */
   date?: string | null;
   content?: string | null;
   completed?: boolean;
   status?: TodoStatus;
   solutions?: string[] | null;
-  /** Estimated effort in minutes. */
   time_to_complete?: number | null;
 };
 
 export type Item = Note | ToDo;
 
-export type ItemFilter = 'all' | 'today' | 'notes' | 'completed';
-
-export type ItemCounts = Record<ItemFilter, number>;
+export type ItemFilter = 'all' | 'today' | 'notes' | 'completed' | 'todos';
 
 export type NoteCreate = {
   type: 'note';

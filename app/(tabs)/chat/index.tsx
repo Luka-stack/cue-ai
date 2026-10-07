@@ -1,4 +1,5 @@
 import { useFloatingTabBarInset } from '@/components/floating-tab-bar';
+import { Header } from '@/components/header';
 import { Message } from '@/components/messages/message';
 import { ThinkingMessage } from '@/components/messages/thinking-message';
 import { Button } from '@/components/ui/button';
@@ -58,10 +59,12 @@ export default function ChatScreen() {
       : 'What do you want to add?';
 
   return (
-    <View className="flex-1 px-5 pt-4">
+    <View className="flex-1 px-5 pt-3">
+      <Header />
+
       <FlatList
         ref={listRef}
-        className="flex-1"
+        className="mt-4 flex-1"
         data={messages}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <Message message={item} />}
@@ -90,7 +93,8 @@ export default function ChatScreen() {
           onPress={handleSend}
           disabled={!canSend}
           accessibilityLabel="Send"
-          className={cn('rounded-full p-3 bg-indigo-500')}
+          style={{ backgroundColor: '#4F46E5' }}
+          className={cn('rounded-full p-3')}
         >
           <Icon as={ArrowUp} className="text-white" size={16} strokeWidth={3} />
         </Button>

@@ -1,10 +1,11 @@
+import { AppLogo } from '@/components/app-logo';
+import { Icon } from '@/components/ui/icon';
 import { useChat } from '@/contexts/chat-context';
-import { Plus, Sparkle, SquarePen } from '@/lib/icons';
 import { cn } from '@/lib/utils';
 import * as Haptics from 'expo-haptics';
 import { usePathname, useRouter } from 'expo-router';
-import { View } from 'react-native';
-import { Button } from './ui/button';
+import { MessageCirclePlus, Plus } from 'lucide-react-native';
+import { Pressable, View } from 'react-native';
 import { Text } from './ui/text';
 
 export function Header() {
@@ -21,35 +22,30 @@ export function Header() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     if (onChat) void newChat();
+    else if (pathname === '/notes') router.push('/note/new');
     else router.push('/modal');
   };
 
   return (
-    <View className="flex flex-row justify-between items-center">
-      <View className="flex flex-row items-center gap-2">
-        <View className="flex items-center justify-center p-2 rounded-md bg-indigo-500">
-          <Sparkle size={20} color="white" fill="white" strokeWidth={1} />
-        </View>
-
-        <Text variant={'h3'}>Cue</Text>
+    <View className="flex-row items-center justify-between">
+      <View className="flex-row items-center gap-2.5">
+        <AppLogo size={32} />
+        <Text className="text-xl font-semibold tracking-tight">Cue AI</Text>
       </View>
 
-      <Button
+      <Pressable
         onPress={onPress}
         disabled={disabled}
+        hitSlop={6}
+        accessibilityRole="button"
         accessibilityLabel={onChat ? 'New chat' : 'Add item'}
         className={cn(
-          'rounded-lg size-9 bg-slate-100 border-slate-100',
+          'size-9 items-center justify-center rounded-xl bg-card active:opacity-70',
           disabled && 'opacity-50',
         )}
-        variant="outline"
       >
-        {onChat ? (
-          <SquarePen size={18} className="text-foreground" />
-        ) : (
-          <Plus size={20} className="text-foreground" />
-        )}
-      </Button>
+        <Icon as={onChat ? MessageCirclePlus : Plus} size={20} />
+      </Pressable>
     </View>
   );
 }

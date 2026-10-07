@@ -1,11 +1,14 @@
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { ThemeProvider } from 'expo-router/react-navigation';
 import { PortalHost } from '@rn-primitives/portal';
 import { Stack } from 'expo-router';
+import { ThemeProvider } from 'expo-router/react-navigation';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { KeyboardProvider } from 'react-native-keyboard-controller';
+import {
+  KeyboardProvider,
+  KeyboardToolbar,
+} from 'react-native-keyboard-controller';
 import 'react-native-reanimated';
 import '../global.css';
 
@@ -52,6 +55,10 @@ function RootNavigator() {
           }}
         />
         <Stack.Screen name="item/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="note/new" options={{ headerShown: false }} />
+        <Stack.Screen name="note/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="todo/new" options={{ headerShown: false }} />
+        <Stack.Screen name="todo/[id]" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>
   );
@@ -69,6 +76,7 @@ export default function RootLayout() {
             <RootNavigator />
             <StatusBar style={statusScheme} />
             <PortalHost />
+            <KeyboardToolbar />
           </KeyboardProvider>
         </ChatProvider>
       </UserProvider>

@@ -3,9 +3,10 @@
   "configurations": [
     {
       "name": "expo-web",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["expo", "start", "--web"],
-      "port": 8081
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/preview-web.js"],
+      "port": 8081,
+      "autoPort": true
     }
   ]
 }
