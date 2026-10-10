@@ -12,6 +12,7 @@ export function Message({ message }: { message: MessageType }) {
       return <UserMessage message={message} />;
     case 'proposal':
       return <ProposalMessage message={message} />;
+    // return <ProposalMessage2 message={message} />;
     case 'error':
       return <ErrorMessage message={message} />;
     default:

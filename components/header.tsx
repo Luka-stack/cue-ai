@@ -40,8 +40,8 @@ export function Header() {
         accessibilityRole="button"
         accessibilityLabel={onChat ? 'New chat' : 'Add item'}
         className={cn(
-          'size-9 items-center justify-center rounded-xl bg-card active:opacity-70',
-          disabled && 'opacity-50',
+          'size-9 items-center justify-center rounded-xl active:opacity-70 active:bg-black/5',
+          disabled && 'opacity-40',
         )}
       >
         <Icon as={onChat ? MessageCirclePlus : Plus} size={20} />

@@ -1,7 +1,7 @@
 import { FloatingTabBar } from '@/components/floating-tab-bar';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Tabs } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Tabs } from 'expo-router';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -44,7 +44,7 @@ export default function TabLayout() {
         screenOptions={{ headerShown: false }}
       >
         <Tabs.Screen name="chat/index" options={{ title: 'Chat' }} />
-        <Tabs.Screen name="todos/index" options={{ title: 'ToDos' }} />
+        <Tabs.Screen name="todos/index" options={{ title: 'To-dos' }} />
         <Tabs.Screen name="notes/index" options={{ title: 'Notes' }} />
       </Tabs>
     </KeyboardProvider>

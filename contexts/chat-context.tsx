@@ -1,4 +1,5 @@
 import { chatApi, errorMessage } from '@/lib/api';
+import { SHOW_MOCK_PROPOSALS } from '@/lib/mock-proposals';
 import { loadThreadId, saveThreadId } from '@/lib/storage';
 import type {
   Message,
@@ -20,9 +21,6 @@ import {
 } from 'react';
 import { useUser } from './user-context';
 
-const GREETING =
-  "Tell me what's on your mind — I'll sort it into a to-do or a note, and set up anything time-sensitive.";
-
 type ChatContextValue = {
   messages: Message[];
   pendingReview: PendingReview | null;
@@ -37,10 +35,6 @@ const ChatContext = createContext<ChatContextValue | null>(null);
 
 let localId = 0;
 const nextLocalId = (prefix: string) => `${prefix}-${Date.now()}-${localId++}`;
-
-function greeting(): Message {
-  return { id: nextLocalId('greeting'), type: 'ai', content: GREETING };
-}
 
 function fromServer(message: ServerMessage): Message | null {
   if (message.role === 'user') {
@@ -76,7 +70,7 @@ export function parseDecision(text: string): {
 export function ChatProvider({ children }: PropsWithChildren) {
   const { userId } = useUser();
   const [threadId, setThreadId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Message[]>([greeting()]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [pendingReview, setPendingReview] = useState<PendingReview | null>(
     null,
   );
@@ -102,7 +96,7 @@ export function ChatProvider({ children }: PropsWithChildren) {
     setStarting(true);
     setThreadId(null);
     setPendingReview(null);
-    setMessages([greeting()]);
+    setMessages([]);
 
     try {
       const thread = await chatApi.createThread(userId);
@@ -177,15 +171,22 @@ export function ChatProvider({ children }: PropsWithChildren) {
 
   const decide = useCallback(
     async (action: ReviewAction, feedback?: string) => {
-      if (!userId || !threadId || busy || !pendingReview) return;
-
-      setBusy(true);
       const decision: ProposalDecision =
         action === 'accept'
           ? 'accepted'
           : action === 'reject'
             ? 'rejected'
             : 'revised';
+
+      // Mock cards have no server review behind them; settle them locally.
+      if (SHOW_MOCK_PROPOSALS && !pendingReview) {
+        settleProposal(decision);
+        return;
+      }
+
+      if (!userId || !threadId || busy || !pendingReview) return;
+
+      setBusy(true);
 
       const echoId = nextLocalId('user');
       // Echo the decision so the transcript reads naturally.

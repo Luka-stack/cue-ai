@@ -1,5 +1,6 @@
 import { useFloatingTabBarInset } from '@/components/floating-tab-bar';
 import { Header } from '@/components/header';
+import { GreetingMessage } from '@/components/messages/greeting-message';
 import { Message } from '@/components/messages/message';
 import { ThinkingMessage } from '@/components/messages/thinking-message';
 import { Button } from '@/components/ui/button';
@@ -69,13 +70,15 @@ export default function ChatScreen() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <Message message={item} />}
         ListFooterComponent={busy ? <ThinkingMessage /> : null}
+        ListEmptyComponent={<GreetingMessage />}
         onContentSizeChange={() =>
           listRef.current?.scrollToEnd({ animated: true })
         }
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       />
 
-      <View className="bg-card flex-row rounded-full px-2 items-center justify-between py-2 shadow shadow-black/5 gap-3 mt-2">
+      <View className="bg-card flex-row rounded-full px-2 items-center justify-between py-2 shadow shadow-black/5 gap-3 mt-4">
         <TextInput
           value={draft}
           onChangeText={setDraft}
