@@ -5,21 +5,21 @@ import { ThemeProvider } from 'expo-router/react-navigation';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import {
-  KeyboardProvider,
-  KeyboardToolbar,
-} from 'react-native-keyboard-controller';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import 'react-native-reanimated';
 import '../global.css';
 
 import { NAV_THEME } from '@/constants/theme';
 import { ChatProvider } from '@/contexts/chat-context';
 import { UserProvider, useUser } from '@/contexts/user-context';
+import { configureReminders } from '@/lib/reminders';
 import { Platform } from 'react-native';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
+
+configureReminders();
 
 // Keep the splash up until we know whether a username is stored.
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -54,7 +54,6 @@ function RootNavigator() {
             sheetCornerRadius: 32,
           }}
         />
-        <Stack.Screen name="item/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="note/new" options={{ headerShown: false }} />
         <Stack.Screen name="note/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="todo/new" options={{ headerShown: false }} />
@@ -76,7 +75,6 @@ export default function RootLayout() {
             <RootNavigator />
             <StatusBar style={statusScheme} />
             <PortalHost />
-            <KeyboardToolbar />
           </KeyboardProvider>
         </ChatProvider>
       </UserProvider>

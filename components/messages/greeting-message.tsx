@@ -1,5 +1,32 @@
-import { useUserId } from '@/contexts/user-context';
-import { Pressable, Text, View } from 'react-native';
+import { PressableScale } from "@/components/ui/pressable-scale";
+import { Text } from "@/components/ui/text";
+import { useChat } from "@/contexts/chat-context";
+import { useUserId } from "@/contexts/user-context";
+import { View } from "react-native";
+
+/** Each one is sent to the agent as the first message. */
+const SUGGESTIONS = [
+  "Tell me what I need to do.",
+  "Anything urgent today?",
+  "Summarize my notes.",
+];
+
+function Suggestion({ text }: { text: string }) {
+  const { submit, starting, busy } = useChat();
+
+  return (
+    <PressableScale
+      onPress={() => void submit(text)}
+      disabled={starting || busy}
+      accessibilityRole="button"
+      accessibilityLabel={text}
+      containerStyle={{ maxWidth: "100%" }}
+      className="rounded-xl border-hairline border-border bg-card px-3 py-2 active:bg-indigo-100 dark:active:bg-indigo-950"
+    >
+      <Text>{text}</Text>
+    </PressableScale>
+  );
+}
 
 export function GreetingMessage() {
   const userId = useUserId();
@@ -7,26 +34,17 @@ export function GreetingMessage() {
   return (
     <View className="mt-20">
       <Text className="text-2xl font-bold text-center">
-        {userId ? `Welcome back, ${userId}` : 'Hello!'}
+        {userId ? `Welcome back, ${userId}` : "Hello!"}
       </Text>
       <Text className="mt-2 text-lg text-center">
-        Tell me what's on your mind {'\n'} I'll help you organize it.
+        Tell me what&apos;s on your mind {"\n"} I&apos;ll help you organize it.
       </Text>
 
-      <View className="gap-4 mt-4">
-        <View className="flex-row gap-4 justify-center">
-          <Pressable className="bg-card rounded-xl p-2 border-hairline">
-            <Text>Tell me what I need to do.</Text>
-          </Pressable>
-          <Pressable className="bg-card rounded-xl p-2 border-hairline">
-            <Text>Anything urgent today?</Text>
-          </Pressable>
-        </View>
-        <View className="flex-row space-x-2 justify-center">
-          <Pressable className="bg-card rounded-xl p-2 border-hairline">
-            <Text>Summarize my notes.</Text>
-          </Pressable>
-        </View>
+      {/* Wraps instead of overflowing, so no chip gets cut off on narrow screens. */}
+      <View className="mt-4 flex-row flex-wrap justify-center gap-3">
+        {SUGGESTIONS.map((text) => (
+          <Suggestion key={text} text={text} />
+        ))}
       </View>
     </View>
   );

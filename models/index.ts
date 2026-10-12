@@ -1,8 +1,6 @@
 // ----------------------------------------------------------------------- items
 // Shapes mirror the server contract in server/app/schemas/item.py.
 
-export type TodoStatus = 'not started' | 'in progress' | 'done' | 'archived';
-
 type BaseItem = {
   id: string;
   type: 'note' | 'todo';
@@ -19,11 +17,9 @@ export type Note = BaseItem & {
 export type ToDo = BaseItem & {
   type: 'todo';
   title: string;
-  date?: string | null;
+  deadline?: string | null;
   content?: string | null;
   completed?: boolean;
-  status?: TodoStatus;
-  solutions?: string[] | null;
   time_to_complete?: number | null;
 };
 
@@ -41,7 +37,7 @@ export type ToDoCreate = {
   type: 'todo';
   title: string;
   content?: string;
-  date?: string;
+  deadline?: string;
 };
 
 export type ItemCreate = NoteCreate | ToDoCreate;
@@ -49,10 +45,8 @@ export type ItemCreate = NoteCreate | ToDoCreate;
 export type ItemUpdate = Partial<{
   title: string;
   content: string;
-  date: string | null;
+  deadline: string | null;
   completed: boolean;
-  status: TodoStatus;
-  solutions: string[];
   time_to_complete: number;
 }>;
 
@@ -85,8 +79,6 @@ export type ToDoValue = {
   task: string;
   time_to_complete?: number | null;
   deadline?: string | null;
-  solutions?: string[];
-  status?: TodoStatus;
 };
 
 export type ProposalRecord = {

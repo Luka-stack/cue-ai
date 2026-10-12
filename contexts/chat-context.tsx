@@ -1,5 +1,4 @@
 import { chatApi, errorMessage } from '@/lib/api';
-import { SHOW_MOCK_PROPOSALS } from '@/lib/mock-proposals';
 import { loadThreadId, saveThreadId } from '@/lib/storage';
 import type {
   Message,
@@ -177,12 +176,6 @@ export function ChatProvider({ children }: PropsWithChildren) {
           : action === 'reject'
             ? 'rejected'
             : 'revised';
-
-      // Mock cards have no server review behind them; settle them locally.
-      if (SHOW_MOCK_PROPOSALS && !pendingReview) {
-        settleProposal(decision);
-        return;
-      }
 
       if (!userId || !threadId || busy || !pendingReview) return;
 

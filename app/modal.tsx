@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useUserId } from '@/contexts/user-context';
 import { errorMessage, itemsApi } from '@/lib/api';
 import { CalendarDays, Check, Clock, X } from '@/lib/icons';
+import { syncReminder } from '@/lib/reminders';
 import { cn } from '@/lib/utils';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
@@ -74,7 +75,7 @@ export default function ModalScreen() {
       type: 'todo',
       title: todoTitle.trim(),
       content: todoNote.trim() || undefined,
-      date,
+      deadline: date,
     });
   };
 
@@ -105,7 +106,10 @@ export default function ModalScreen() {
     setSaving(true);
 
     try {
-      await itemsApi.create(userId, payload);
+      const saved = await itemsApi.create(userId, payload);
+      if (saved.type === 'todo') {
+        await syncReminder(saved).catch(() => undefined);
+      }
       router.dismiss();
     } catch (error) {
       Alert.alert('Could not save', errorMessage(error));

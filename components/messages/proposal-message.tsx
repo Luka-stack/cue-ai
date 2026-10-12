@@ -36,7 +36,6 @@ function NoteRecord({ value }: { value: NoteValue }) {
 function ToDoRecord({ value }: { value: ToDoValue }) {
   const deadline = formatDateTime(value.deadline);
   const effort = formatMinutes(value.time_to_complete);
-  const solutions = value.solutions?.filter(Boolean) ?? [];
 
   return (
     <>
@@ -50,26 +49,7 @@ function ToDoRecord({ value }: { value: ToDoValue }) {
         {effort ? (
           <Text className="text-[14px] text-muted-foreground">~{effort}</Text>
         ) : null}
-
-        {/* {value.status && value.status !== 'not started' ? (
-          <Text className="text-[14px] text-muted-foreground capitalize">
-            {value.status}
-          </Text>
-        ) : null} */}
       </View>
-
-      {/* {solutions.length > 0 ? (
-        <View className="mt-3 gap-1">
-          <Text className="text-sm font-semibold text-muted-foreground">
-            Ideas
-          </Text>
-          {solutions.map((solution, i) => (
-            <Text key={i} className="text-sm">
-              • {solution}
-            </Text>
-          ))}
-        </View>
-      ) : null} */}
     </>
   );
 }

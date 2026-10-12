@@ -17,8 +17,8 @@ export function groupTodos(items: ToDo[]) {
   const open = items
     .filter((todo) => !todo.completed)
     .sort((a, b) => {
-      const da = time(a.date);
-      const db = time(b.date);
+      const da = time(a.deadline);
+      const db = time(b.deadline);
       if (da !== null && db !== null) return da - db;
       if (da !== null) return -1;
       if (db !== null) return 1;

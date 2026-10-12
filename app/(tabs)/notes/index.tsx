@@ -1,7 +1,6 @@
 import {
   ActivityIndicator,
   FlatList,
-  Pressable,
   RefreshControl,
   View,
 } from 'react-native';
@@ -9,6 +8,7 @@ import {
 import { useFloatingTabBarInset } from '@/components/floating-tab-bar';
 import { NoteCard } from '@/components/note-card';
 import { Icon } from '@/components/ui/icon';
+import { PressableScale } from '@/components/ui/pressable-scale';
 import { Text } from '@/components/ui/text';
 import { useItems } from '@/hooks/use-items';
 import { Plus } from '@/lib/icons';
@@ -73,12 +73,16 @@ export default function NotesScreen() {
             }
           />
 
-          <Pressable
+          <PressableScale
             onPress={() => router.push('/note/new')}
-            className="absolute bottom-24 right-4 h-12 w-12 items-center justify-center rounded-full bg-[#4F46E5]"
+            scaleTo={0.9}
+            accessibilityRole="button"
+            accessibilityLabel="New note"
+            containerStyle={{ position: 'absolute', bottom: 96, right: 16 }}
+            className="h-12 w-12 items-center justify-center rounded-full bg-[#4F46E5] active:bg-[#3730A3]"
           >
             <Icon as={Plus} size={24} className="stroke-white" />
-          </Pressable>
+          </PressableScale>
         </>
       )}
     </View>

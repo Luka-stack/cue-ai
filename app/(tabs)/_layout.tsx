@@ -2,8 +2,9 @@ import { FloatingTabBar } from '@/components/floating-tab-bar';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Tabs } from 'expo-router';
+import type { BottomTabNavigationOptions } from 'expo-router/js-tabs';
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { Dimensions, Easing, StyleSheet } from 'react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -33,6 +34,27 @@ function ScreenBackground({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Full-width slide between tabs: the new tab pushes the old one off-screen in
+ * the direction of travel (progress is -1 left of the active tab, 1 right).
+ */
+const slide: BottomTabNavigationOptions['sceneStyleInterpolator'] = ({ current }) => {
+  const width = Dimensions.get('window').width;
+
+  return {
+    sceneStyle: {
+      transform: [
+        {
+          translateX: current.progress.interpolate({
+            inputRange: [-1, 0, 1],
+            outputRange: [-width, 0, width],
+          }),
+        },
+      ],
+    },
+  };
+};
+
 export default function TabLayout() {
   return (
     <KeyboardProvider>
@@ -41,7 +63,14 @@ export default function TabLayout() {
         screenLayout={({ children }) => (
           <ScreenBackground>{children}</ScreenBackground>
         )}
-        screenOptions={{ headerShown: false }}
+        screenOptions={{
+          headerShown: false,
+          sceneStyleInterpolator: slide,
+          transitionSpec: {
+            animation: 'timing',
+            config: { duration: 280, easing: Easing.out(Easing.cubic) },
+          },
+        }}
       >
         <Tabs.Screen name="chat/index" options={{ title: 'Chat' }} />
         <Tabs.Screen name="todos/index" options={{ title: 'To-dos' }} />

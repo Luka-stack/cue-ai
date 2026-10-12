@@ -23,7 +23,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import {
+  KeyboardAwareScrollView,
+  KeyboardToolbar,
+} from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OverflowMenu } from '@/components/overflow-menu';
@@ -32,6 +35,7 @@ import { Text } from '@/components/ui/text';
 import { useUserId } from '@/contexts/user-context';
 import { errorMessage, itemsApi } from '@/lib/api';
 import { formatShortDateTime } from '@/lib/format';
+import { cancelReminder, syncReminder } from '@/lib/reminders';
 import type { ToDo } from '@/models';
 
 type TodoEditorProps = {
@@ -46,7 +50,9 @@ export function TodoEditor({ todo }: TodoEditorProps) {
 
   const [title, setTitle] = useState(todo?.title ?? '');
   const [content, setContent] = useState(todo?.content ?? '');
-  const [date, setDate] = useState<string | null>(todo?.date ?? null);
+  const [deadline, setDeadline] = useState<string | null>(
+    todo?.deadline ?? null,
+  );
   const [saving, setSaving] = useState(false);
   const [exit, setExit] = useState<NavigationAction | true | null>(null);
   const contentRef = useRef<TextInput>(null);
@@ -56,7 +62,7 @@ export function TodoEditor({ todo }: TodoEditorProps) {
   const isDirty =
     title !== (todo?.title ?? '') ||
     content !== (todo?.content ?? '') ||
-    date !== (todo?.date ?? null);
+    deadline !== (todo?.deadline ?? null);
 
   const updatedAt = isNew
     ? formatShortDateTime(new Date().toISOString())
@@ -82,19 +88,23 @@ export function TodoEditor({ todo }: TodoEditorProps) {
     setSaving(true);
 
     try {
-      if (isNew) {
-        await itemsApi.create(userId, {
-          type: 'todo',
-          title: title.trim(),
-          content: content.trim() || undefined,
-          date: date ?? undefined,
-        });
-      } else {
-        await itemsApi.update(userId, todo!.id, {
-          title: title.trim(),
-          content: content.trim(),
-          date,
-        });
+      const saved = isNew
+        ? await itemsApi.create(userId, {
+            type: 'todo',
+            title: title.trim(),
+            content: content.trim() || undefined,
+            deadline: deadline ?? undefined,
+          })
+        : await itemsApi.update(userId, todo!.id, {
+            title: title.trim(),
+            content: content.trim(),
+            deadline,
+          });
+
+      // The to-do is saved either way; a reminder that can't be scheduled
+      // (e.g. notifications denied) shouldn't block leaving the editor.
+      if (saved.type === 'todo') {
+        await syncReminder(saved).catch(() => undefined);
       }
 
       leave();
@@ -109,6 +119,7 @@ export function TodoEditor({ todo }: TodoEditorProps) {
     confirm('Delete to-do?', 'This cannot be undone.', 'Delete', async () => {
       try {
         await itemsApi.remove(userId, todo!.id);
+        await cancelReminder(todo!.id);
         leave();
       } catch (error) {
         Alert.alert('Could not delete', errorMessage(error));
@@ -160,10 +171,10 @@ export function TodoEditor({ todo }: TodoEditorProps) {
       </View>
 
       <ReminderBar
-        value={date}
+        value={deadline}
         onChange={(next) => {
           tap();
-          setDate(next);
+          setDeadline(next);
         }}
         disabled={saving}
       />
@@ -172,7 +183,7 @@ export function TodoEditor({ todo }: TodoEditorProps) {
         className="flex-1"
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
-        bottomOffset={24}
+        bottomOffset={TOOLBAR_HEIGHT + 24}
       >
         <TextInput
           value={title}
@@ -202,9 +213,13 @@ export function TodoEditor({ todo }: TodoEditorProps) {
           className="mt-3 min-h-40 flex-1 text-base leading-relaxed text-foreground"
         />
       </KeyboardAwareScrollView>
+      <KeyboardToolbar />
     </SafeAreaView>
   );
 }
+
+/** Height of `KeyboardToolbar`, so the caret stays clear of it. */
+const TOOLBAR_HEIGHT = 42;
 
 // ------------------------------------------------------------------- reminder
 

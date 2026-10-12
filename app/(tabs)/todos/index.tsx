@@ -1,6 +1,7 @@
 import { useFloatingTabBarInset } from '@/components/floating-tab-bar';
 import { TodoCard } from '@/components/todo-card';
 import { Icon } from '@/components/ui/icon';
+import { PressableScale } from '@/components/ui/pressable-scale';
 import { Text } from '@/components/ui/text';
 import { useItems } from '@/hooks/use-items';
 import { groupTodos } from '@/lib/todos';
@@ -10,7 +11,6 @@ import { Plus } from 'lucide-react-native';
 import { useMemo } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
   RefreshControl,
   SectionList,
   View,
@@ -108,12 +108,16 @@ export default function TodosScreen() {
             }
           />
 
-          <Pressable
+          <PressableScale
             onPress={() => router.push('/todo/new')}
-            className="absolute bottom-24 right-4 h-12 w-12 items-center justify-center rounded-full bg-[#4F46E5]"
+            scaleTo={0.9}
+            accessibilityRole="button"
+            accessibilityLabel="New to-do"
+            containerStyle={{ position: 'absolute', bottom: 96, right: 16 }}
+            className="h-12 w-12 items-center justify-center rounded-full bg-[#4F46E5] active:bg-[#3730A3]"
           >
             <Icon as={Plus} size={24} className="stroke-white" />
-          </Pressable>
+          </PressableScale>
         </>
       )}
     </View>

@@ -1,5 +1,6 @@
 import { useUserId } from '@/contexts/user-context';
 import { errorMessage, itemsApi } from '@/lib/api';
+import { syncReminder } from '@/lib/reminders';
 import type { Item, ItemFilter, ItemUpdate } from '@/models';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
@@ -51,6 +52,11 @@ export function useItems<T extends Item>(filter: ItemFilter) {
     async (id: string, patch: ItemUpdate) => {
       const updated = (await itemsApi.update(userId, id, patch)) as T;
       setItems((prev) => prev.map((it) => (it.id === id ? updated : it)));
+      // Completing a to-do clears its reminder; reopening it restores one
+      // that is still in the future.
+      if (updated.type === 'todo') {
+        syncReminder(updated).catch(() => undefined);
+      }
       return updated;
     },
     [userId],

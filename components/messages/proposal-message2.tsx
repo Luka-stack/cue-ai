@@ -1,4 +1,3 @@
-import { useChat } from '@/contexts/chat-context';
 import type { ProposalMessage as ProposalMessageType } from '@/models';
 import { View } from 'react-native';
 import { Text } from '../ui/text';
@@ -13,7 +12,6 @@ export function ProposalMessage2({
 }: {
   message: ProposalMessageType;
 }) {
-  const { decide, busy } = useChat();
   const { review, decision } = message;
   const colors = COLORS[review.kind];
   const pending = !decision;

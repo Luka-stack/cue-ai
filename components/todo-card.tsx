@@ -28,7 +28,7 @@ export function TodoCard({ todo, onToggleCompleted }: TodoCardProps) {
     }
   };
 
-  const date = formatShortDateTime(todo.date);
+  const date = formatShortDateTime(todo.deadline);
 
   return (
     <View className="flex-row items-start gap-3 rounded-2xl bg-card px-4 py-3.5">

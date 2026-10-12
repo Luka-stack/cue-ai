@@ -11,7 +11,10 @@ import {
 } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import {
+  KeyboardAwareScrollView,
+  KeyboardToolbar,
+} from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OverflowMenu } from '@/components/overflow-menu';
@@ -165,7 +168,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
         className="flex-1"
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
-        bottomOffset={24}
+        bottomOffset={TOOLBAR_HEIGHT + 24}
       >
         <TextInput
           value={title}
@@ -195,9 +198,13 @@ export function NoteEditor({ note }: NoteEditorProps) {
           className="mt-3 min-h-40 flex-1 text-base leading-relaxed text-foreground"
         />
       </KeyboardAwareScrollView>
+      <KeyboardToolbar />
     </SafeAreaView>
   );
 }
+
+/** Height of `KeyboardToolbar`, so the caret stays clear of it. */
+const TOOLBAR_HEIGHT = 42;
 
 function HeaderButton({
   icon,
